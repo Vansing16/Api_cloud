@@ -18,7 +18,6 @@ class CreatePostServicesTable extends Migration
             $table->string('desciption', 1000);
             $table->unsignedBigInteger('freelancer_id');
             $table->enum('review_status', ['pending', 'rejected', 'approved'])->default('pending');
-            $table->unsignedBigInteger('review_by_admin_id');
             $table->timestamps();
 
             $table->foreign('freelancer_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');

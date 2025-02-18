@@ -10,7 +10,6 @@ class CreateFreelancerReviewsTable extends Migration
     {
         Schema::create('freelancer_reviews', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('review_by_admin_id');
             $table->unsignedBigInteger('freelancer_id');
             $table->char('comment', 100);
             $table->tinyInteger('rating');

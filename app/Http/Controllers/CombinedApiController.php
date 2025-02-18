@@ -138,17 +138,20 @@ class CombinedApiController extends Controller
     public function messageStore(Request $request, $freelancerId)
     {
         $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
             'message' => 'required|string|max:255',
-            'contactinfo' => 'required|string|max:255',
         ]);
 
         try {
-            $message = new Message();
-            $message->user_id = auth()->user()->id;
-            $message->freelancer_id = $freelancerId;
-            $message->message = $request->input('message');
-            $message->contact_info = $request->input('contactinfo');
-            $message->save();
+            $message = Message::create([
+                'freelancer_id' => $freelancerId,
+                'name' => $request->input('name'),
+                'email' => $request->input('email'),
+                'message' => $request->input('message'),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -158,7 +161,8 @@ class CombinedApiController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to send message: ' . $e->getMessage(),
+                'message' => 'Failed to send message',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -166,20 +170,22 @@ class CombinedApiController extends Controller
     public function viewMessages()
     {
         try {
-            $me = auth()->user();
-            $messages = Message::where('freelancer_id', $me->id)->with('user')->get();
+            $messages = Message::all(); // Retrieve all messages
 
             return response()->json([
                 'success' => true,
                 'data' => $messages
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve messages: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve messages',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
+
 
     public function reviewIndex()
     {
@@ -233,9 +239,10 @@ class CombinedApiController extends Controller
 
     public function serviceStore(Request $request)
     {
+        // Validate input (note that 'service-thumbnail' is now nullable)
         $validated = $request->validate([
             'service-title' => 'required|string|max:255',
-            'service-thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif,svg',
+            'service-thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
             'service-category' => 'required|string|max:255',
             'service-cost' => 'required|numeric',
             'rate-hour' => 'required|string|max:255',
@@ -243,8 +250,12 @@ class CombinedApiController extends Controller
         ]);
 
         try {
-            $path = $request->file('service-thumbnail')->store('thumbnails', 'public');
+            // Store thumbnail if uploaded, otherwise set to null
+            $path = $request->hasFile('service-thumbnail')
+                ? $request->file('service-thumbnail')->store('thumbnails', 'public')
+                : null;
 
+            // Create a new Service record
             $service = Service::create([
                 'title' => $validated['service-title'],
                 'thumbnail' => $path,
@@ -259,13 +270,14 @@ class CombinedApiController extends Controller
                 'message' => 'Service posted successfully!',
                 'data' => $service
             ], 201);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to store the service: ' . $e->getMessage(),
             ], 500);
         }
     }
+
 
     public function viewService()
     {
